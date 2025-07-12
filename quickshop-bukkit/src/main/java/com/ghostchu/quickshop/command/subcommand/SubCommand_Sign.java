@@ -39,7 +39,7 @@ public class SubCommand_Sign implements CommandHandler<Player> {
     }
 
     if(parser.getArgs().isEmpty()) {
-      plugin.text().of(sender, "no-sign-type-given", CommonUtil.list2String(getAvailableSignMaterials().stream().map(s->s.name().toLowerCase()).toList())).send();
+      plugin.text().of(sender, "no-sign-type-given", CommonUtil.list2String(getAvailableSignMaterials().stream().map(s->s.name().toLowerCase(Locale.ROOT)).toList())).send();
       return;
     }
     final String signType = parser.getArgs().get(0);
