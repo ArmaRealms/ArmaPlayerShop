@@ -43,7 +43,7 @@ public class SubCommand_Sign implements CommandHandler<Player> {
       return;
     }
     final String signType = parser.getArgs().get(0);
-    final Material material = Material.matchMaterial(signType.trim().toUpperCase());
+    final Material material = Material.matchMaterial(signType.trim().toUpperCase(Locale.ROOT));
     if(material == null || !Tag.WALL_SIGNS.isTagged(material)) {
       plugin.text().of(sender, "sign-type-invalid", signType).send();
       return;
