@@ -3,7 +3,7 @@ package com.ghostchu.quickshop.api.permission;
 import lombok.Getter;
 
 /**
- * Throw when no permission provider founded.
+ * Thrown when no permission provider is found.
  */
 @Getter
 public class ProviderIsEmptyException extends RuntimeException {
