@@ -369,6 +369,5 @@ public class ShopHistory {
   public record ShopHistoryRecord(Timestamp date, long shopId, long dataId, UUID buyer,
                                   ShopOperationEnum shopType, int amount, double money, double tax
   ) {
-
   }
 }

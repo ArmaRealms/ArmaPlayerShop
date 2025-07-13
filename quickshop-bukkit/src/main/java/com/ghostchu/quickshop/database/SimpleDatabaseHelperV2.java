@@ -72,39 +72,6 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
     checkDatabaseVersion();
   }
 
-  InfoRecord {
-
-    @Override
-    public long getShopId () {
-
-      return shopID;
-    }
-
-    @Override
-    public String getWorld () {
-
-      return world;
-    }
-
-    @Override
-    public int getX () {
-
-      return x;
-    }
-
-    @Override
-    public int getY () {
-
-      return y;
-    }
-
-    @Override
-    public int getZ () {
-
-      return z;
-    }
-  }
-
   private void checkDatabaseVersion() {
 
     if(PackageUtil.parsePackageProperly("skipDatabaseVersionCheck").asBoolean(false)) {
@@ -124,6 +91,7 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
       setDatabaseVersion(LATEST_DATABASE_VERSION);
     }
   }
+
 
   /**
    * Verifies that all required columns exist.
@@ -167,6 +135,7 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
             .setParams("database_version", version)
             .executeFuture(lines->lines);
   }
+
 
   public CompletableFuture<Integer> purgeIsolated() {
 
@@ -914,6 +883,7 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
     return match; // Uh, wtf.
   }
 
+
   /**
    * Returns true if the table exists
    *
@@ -966,9 +936,6 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
       plugin.logger().warn("Cannot setup the table index", e);
     }
   }
-
-
-  private record ShopInfo(long shopID, String world, int x, int y, int z) implements
 
   static class DatabaseUpgrade {
 
@@ -1073,6 +1040,39 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
         return false;
       }
       return true;
+    }
+  }
+
+  private record ShopInfo(long shopID, String world, int x, int y, int z) implements InfoRecord {
+
+    @Override
+    public long getShopId() {
+
+      return shopID;
+    }
+
+    @Override
+    public String getWorld() {
+
+      return world;
+    }
+
+    @Override
+    public int getX() {
+
+      return x;
+    }
+
+    @Override
+    public int getY() {
+
+      return y;
+    }
+
+    @Override
+    public int getZ() {
+
+      return z;
     }
   }
 }
