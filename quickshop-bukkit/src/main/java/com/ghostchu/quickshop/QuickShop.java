@@ -64,7 +64,6 @@ import com.ghostchu.quickshop.registry.builtin.itemexpression.SimpleItemExpressi
 import com.ghostchu.quickshop.registry.builtin.itemexpression.handlers.SimpleEnchantmentExpressionHandler;
 import com.ghostchu.quickshop.registry.builtin.itemexpression.handlers.SimpleItemReferenceExpressionHandler;
 import com.ghostchu.quickshop.registry.builtin.itemexpression.handlers.SimpleMaterialExpressionHandler;
-import com.ghostchu.quickshop.shop.InteractionController;
 import com.ghostchu.quickshop.shop.ShopLoader;
 import com.ghostchu.quickshop.shop.ShopPurger;
 import com.ghostchu.quickshop.shop.SimpleShopItemBlackList;
@@ -74,6 +73,7 @@ import com.ghostchu.quickshop.shop.controlpanel.SimpleShopControlPanel;
 import com.ghostchu.quickshop.shop.controlpanel.SimpleShopControlPanelManager;
 import com.ghostchu.quickshop.shop.display.AbstractDisplayItem;
 import com.ghostchu.quickshop.shop.display.virtual.VirtualDisplayItemManager;
+import com.ghostchu.quickshop.shop.interaction.QuickShopInteractionManager;
 import com.ghostchu.quickshop.shop.inventory.BukkitInventoryWrapperManager;
 import com.ghostchu.quickshop.shop.sign.SignHooker;
 import com.ghostchu.quickshop.util.FastPlayerFinder;
@@ -159,6 +159,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -216,6 +217,7 @@ public class QuickShop implements QuickShopAPI, Reloadable {
   private final PasteManager pasteManager = new PasteManager();
   protected MenuHandler menuHandler;
   protected HelperMethods helperMethods;
+  private QuickShopInteractionManager interactionManager;
   private FoliaLib folia;
   /* Public QuickShop API End */
   private GameVersion gameVersion;
@@ -307,8 +309,6 @@ public class QuickShop implements QuickShopAPI, Reloadable {
   @Getter
   private ShopPurger shopPurger;
   private int loggingLocation = 0;
-  @Getter
-  private InteractionController interactionController;
   @Getter
   private volatile SQLManager sqlManager;
   @Getter
@@ -419,6 +419,9 @@ public class QuickShop implements QuickShopAPI, Reloadable {
     logger.info("Initializing NexusManager...");
     this.nexusManager = new NexusManager(this);
     logger.info("QuickShop " + javaPlugin.getFork() + " - Early boot step - Complete");
+
+    logger.info("Initializing InteractionManager");
+    //TODO: Register interaction defaults
   }
 
   private void registerService() {
@@ -617,6 +620,17 @@ public class QuickShop implements QuickShopAPI, Reloadable {
     return this.rankLimiter.getLimits();
   }
 
+  /**
+   * Retrieves the InteractionManager associated with this QuickShopProvider.
+   *
+   * @return The InteractionManager that manages InteractionBehaviors and InteractionTypes.
+   */
+  @Override
+  public QuickShopInteractionManager getInteractionManager() {
+
+    return interactionManager;
+  }
+
   @Override
   public ShopManager getShopManager() {
 
@@ -798,7 +812,7 @@ public class QuickShop implements QuickShopAPI, Reloadable {
     shopLoader.loadShops();
     QuickExecutor.getCommonExecutor().submit(this::bakeShopsOwnerCache);
     logger.info("Registering listeners...");
-    this.interactionController = new InteractionController(this);
+    this.interactionManager = new QuickShopInteractionManager(this);
     // Register events
     // Listeners (These don't)
     registerListeners();
@@ -862,7 +876,7 @@ public class QuickShop implements QuickShopAPI, Reloadable {
 
   private void loadVirtualDisplayItem() {
 
-    if(!invalidProvider) {
+    if(!invalidProvider && this.display) {
       //VirtualItem support
       if(AbstractDisplayItem.getNowUsing() == DisplayType.VIRTUALITEM) {
         logger.info("Using Virtual Displays. Attempting to initialize packet factory...");
@@ -1412,9 +1426,51 @@ public class QuickShop implements QuickShopAPI, Reloadable {
     }
 
     @Nullable
-    private AbstractEconomy loadVaultUnlocked() {
+    private AbstractEconomy loadVaultUnlocked() throws Exception {
 
-      return new Economy_VaultUnlocked(parent);
+      final Economy_VaultUnlocked vault = new Economy_VaultUnlocked(parent);
+      final boolean taxEnabled = parent.getConfig().getDouble("tax", 0.0d) > 0;
+      final String taxAccount = parent.getConfig().getString("tax-account", "tax");
+      if(!vault.isValid()) {
+        return null;
+      }
+      if(!taxEnabled) {
+        return vault;
+      }
+
+      if(StringUtils.isEmpty(taxAccount)) {
+        return vault;
+      }
+
+      UUID taxID;
+
+      try {
+        taxID = UUID.fromString(taxAccount);
+
+      } catch(final Exception ignore) {
+        taxID = UUID.nameUUIDFromBytes(taxAccount.getBytes(StandardCharsets.UTF_8));
+      }
+
+      if(!Objects.requireNonNull(vault.getVault()).hasAccount(taxID)) {
+
+        Log.debug("Tax account doesn't exists: " + taxAccount);
+
+        parent.logger().warn("QuickShop detected that no tax account exists and will try to create one. If you see any errors, please change the tax-account name in the config.yml to that of the Server owner.");
+
+        if(vault.getVault().createAccount(taxID, taxAccount, false)) {
+
+          parent.logger().info("Tax account created.");
+        } else {
+
+          parent.logger().warn("Cannot create tax-account, please change the tax-account name in the config.yml to that of the server owner");
+        }
+
+        if(!vault.getVault().hasAccount(taxID)) {
+
+          parent.logger().warn("Player for the Tax-account has never played on this server before and we couldn't create an account. This may cause server lag or economy errors, therefore changing the name is recommended. You may ignore this warning if it doesn't cause any issues.");
+        }
+      }
+      return vault;
     }
 
     // Vault may create exception, we need catch it.
