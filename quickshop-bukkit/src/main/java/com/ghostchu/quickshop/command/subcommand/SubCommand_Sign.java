@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 public class SubCommand_Sign implements CommandHandler<Player> {
@@ -40,11 +39,11 @@ public class SubCommand_Sign implements CommandHandler<Player> {
     }
 
     if(parser.getArgs().isEmpty()) {
-      plugin.text().of(sender, "no-sign-type-given", CommonUtil.list2String(getAvailableSignMaterials().stream().map(s->s.name().toLowerCase(Locale.ROOT)).toList())).send();
+      plugin.text().of(sender, "no-sign-type-given", CommonUtil.list2String(getAvailableSignMaterials().stream().map(Enum::name).toList())).send();
       return;
     }
-    final String signType = parser.getArgs().get(0);
-    final Material material = Material.matchMaterial(signType.trim().toUpperCase(Locale.ROOT));
+    final String signType = parser.getArgs().getFirst();
+    final Material material = Material.matchMaterial(signType.trim());
     if(material == null || !Tag.WALL_SIGNS.isTagged(material)) {
       plugin.text().of(sender, "sign-type-invalid", signType).send();
       return;
@@ -66,7 +65,7 @@ public class SubCommand_Sign implements CommandHandler<Player> {
   public List<String> onTabComplete(
           @NotNull final Player sender, @NotNull final String commandLabel, @NotNull final CommandParser parser) {
 
-    return parser.getArgs().size() == 1? getAvailableSignMaterials().stream().map(s->s.name().toLowerCase()).toList() : Collections.emptyList();
+    return parser.getArgs().size() == 1? Tag.WALL_SIGNS.getValues().stream().map(Enum::name).toList() : Collections.emptyList();
   }
 
 }

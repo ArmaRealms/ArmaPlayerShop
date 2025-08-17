@@ -1,11 +1,9 @@
 package com.ghostchu.quickshop.util.envcheck;
 
-import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
+import com.ghostchu.quickshop.common.util.CommonUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Getter
 public class ResultContainer {
 
   private final CheckResult result;
@@ -15,10 +13,19 @@ public class ResultContainer {
 
     this.result = result;
     this.resultMessage = resultMessage;
-    if(StringUtils.isEmpty(this.resultMessage)) {
+    if(CommonUtil.isEmptyString(this.resultMessage)) {
       this.resultMessage = "null";
     }
   }
 
+  public CheckResult getResult() {
+
+    return result;
+  }
+
+  public String getResultMessage() {
+
+    return resultMessage;
+  }
 }
 
