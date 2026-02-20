@@ -25,9 +25,11 @@ import com.ghostchu.quickshop.api.shop.interaction.InteractionClick;
 import com.ghostchu.quickshop.api.shop.interaction.InteractionType;
 import com.ghostchu.quickshop.api.shop.permission.BuiltInShopPermissionGroup;
 import com.ghostchu.quickshop.menu.ShopKeeperMenu;
+import com.ghostchu.quickshop.util.Util;
 import net.tnemc.menu.core.compatibility.MenuPlayer;
 import net.tnemc.menu.core.manager.MenuManager;
 import net.tnemc.menu.core.viewer.MenuViewer;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -85,11 +87,16 @@ public class ControlPanelUI implements InteractionBehavior {
       return;
     }
 
+    Util.playClickSound(player);
+    shop.setSignText(((QuickShop)plugin).text().findRelativeLanguages(player));
     if(shop.isFrozen()) {
       ((QuickShop)plugin).text().of(event.getPlayer(), "shop-cannot-trade-when-freezing").send();
       return;
     }
 
+    if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.GOLDEN_AXE) {
+      return;
+    }
 
     MenuManager.instance().addViewer(viewer);
 

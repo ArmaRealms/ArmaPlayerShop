@@ -73,7 +73,7 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
 
   private void checkDatabaseVersion() {
 
-    if(PackageUtil.parsePackageProperly("skipDatabaseVersionCheck").asBoolean(false)) {
+    if(QuickShop.getInstance().getConfig().getBoolean("database.skip-version-check", false)) {
       return;
     }
     final int databaseVersion = getDatabaseVersion();
@@ -785,7 +785,7 @@ public class SimpleDatabaseHelperV2 implements DatabaseHelper {
     final long shopId = shop.getShopId();
     if(shopId < 1) {
       Log.debug("Warning: Failed to update shop because the shop id locate result for " + loc + ", because the query shopId is " + shopId);
-      return null;
+      return CompletableFuture.completedFuture(null);
     }
     return queryDataId(simpleDataRecord).thenCompose(dataId->{
       if(dataId != null) {

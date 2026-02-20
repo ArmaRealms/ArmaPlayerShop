@@ -28,6 +28,7 @@ import com.ghostchu.quickshop.util.Util;
 import net.tnemc.menu.core.compatibility.MenuPlayer;
 import net.tnemc.menu.core.manager.MenuManager;
 import net.tnemc.menu.core.viewer.MenuViewer;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -71,6 +72,8 @@ public class TradeUI implements InteractionBehavior {
                                                                                event.getBlockFace(),
                                                                                event.getHand(),
                                                                                event.getItem())) {
+
+        //cancel our interaction.
         event.setCancelled(true);
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
@@ -82,12 +85,19 @@ public class TradeUI implements InteractionBehavior {
         return;
       }
 
+      //open our menus.
+      if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.GOLDEN_AXE) {
+        return;
+      }
+
       final MenuViewer viewer = new MenuViewer(event.getPlayer().getUniqueId());
       viewer.addData(ShopKeeperMenu.SHOP_DATA_ID, shop.getShopId());
       MenuManager.instance().addViewer(viewer);
 
       final MenuPlayer menuPlayer = QuickShop.getInstance().createMenuPlayer(event.getPlayer());
       MenuManager.instance().open("qs:trade", 1, menuPlayer);
+
+      //cancel our item use
       event.setCancelled(true);
       event.setUseInteractedBlock(Event.Result.DENY);
       event.setUseItemInHand(Event.Result.DENY);

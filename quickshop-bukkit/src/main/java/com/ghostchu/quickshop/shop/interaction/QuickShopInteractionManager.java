@@ -22,18 +22,23 @@ import com.ghostchu.quickshop.api.shop.interaction.InteractionBehavior;
 import com.ghostchu.quickshop.api.shop.interaction.InteractionClick;
 import com.ghostchu.quickshop.api.shop.interaction.InteractionManager;
 import com.ghostchu.quickshop.api.shop.interaction.InteractionType;
+import com.ghostchu.quickshop.config.InteractionConfig;
 import com.ghostchu.quickshop.shop.interaction.behaviors.ControlPanel;
 import com.ghostchu.quickshop.shop.interaction.behaviors.ControlPanelUI;
 import com.ghostchu.quickshop.shop.interaction.behaviors.TradeDirect;
 import com.ghostchu.quickshop.shop.interaction.behaviors.TradeDirectAll;
 import com.ghostchu.quickshop.shop.interaction.behaviors.TradeInteraction;
 import com.ghostchu.quickshop.shop.interaction.behaviors.TradeUI;
+import com.ghostchu.quickshop.shop.interaction.interactions.SneakingLeftClickContainer;
 import com.ghostchu.quickshop.shop.interaction.interactions.SneakingLeftClickShop;
 import com.ghostchu.quickshop.shop.interaction.interactions.SneakingLeftClickSign;
+import com.ghostchu.quickshop.shop.interaction.interactions.SneakingRightClickContainer;
 import com.ghostchu.quickshop.shop.interaction.interactions.SneakingRightClickShop;
 import com.ghostchu.quickshop.shop.interaction.interactions.SneakingRightClickSign;
+import com.ghostchu.quickshop.shop.interaction.interactions.StandingLeftClickContainer;
 import com.ghostchu.quickshop.shop.interaction.interactions.StandingLeftClickShop;
 import com.ghostchu.quickshop.shop.interaction.interactions.StandingLeftClickSign;
+import com.ghostchu.quickshop.shop.interaction.interactions.StandingRightClickContainer;
 import com.ghostchu.quickshop.shop.interaction.interactions.StandingRightClickShop;
 import com.ghostchu.quickshop.shop.interaction.interactions.StandingRightClickSign;
 import com.ghostchu.quickshop.util.logger.Log;
@@ -41,14 +46,9 @@ import com.ghostchu.quickshop.util.paste.item.SubPasteItem;
 import com.ghostchu.quickshop.util.paste.util.HTMLTable;
 import com.ghostchu.simplereloadlib.ReloadResult;
 import com.ghostchu.simplereloadlib.Reloadable;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -81,13 +81,22 @@ public class QuickShopInteractionManager implements InteractionManager, Reloadab
 
   public void loadDefaults() {
 
+    //Container Interactions
+    interaction(new SneakingLeftClickContainer());
+    interaction(new SneakingRightClickContainer());
+    interaction(new StandingLeftClickContainer());
+    interaction(new StandingRightClickContainer());
+    
+    //Shop Interactions
     interaction(new SneakingLeftClickShop());
-    interaction(new SneakingLeftClickSign());
     interaction(new SneakingRightClickShop());
-    interaction(new SneakingRightClickSign());
     interaction(new StandingLeftClickShop());
-    interaction(new StandingLeftClickSign());
     interaction(new StandingRightClickShop());
+    
+    //Sign Interactions
+    interaction(new SneakingLeftClickSign());
+    interaction(new SneakingRightClickSign());
+    interaction(new StandingLeftClickSign());
     interaction(new StandingRightClickSign());
 
     behavior(new ControlPanel());
@@ -233,8 +242,13 @@ public class QuickShopInteractionManager implements InteractionManager, Reloadab
   public void loadConfig() {
 
     Log.debug("Interaction Config Loading.");
+    final InteractionConfig config = new InteractionConfig();
+    if(!config.load()) {
 
-    final File configFile = new File(plugin.getDataFolder(), "interaction.yml");
+      plugin.logger().warn("Failed to copy interaction.yml to plugin folder!");
+    }
+
+    /*final File configFile = new File(plugin.getDataFolder(), "interaction.yml");
     if(!configFile.exists()) {
       try {
         Files.copy(plugin.getJavaPlugin().getResource("interaction.yml"), configFile.toPath());
@@ -242,12 +256,12 @@ public class QuickShopInteractionManager implements InteractionManager, Reloadab
         plugin.logger().warn("Failed to copy interaction.yml to plugin folder!", e);
       }
     }
-    final FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+    final FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);*/
     behaviorMapping.clear();
 
     for(final String interaction : interactions.keySet()) {
 
-      final String behavior = config.getString(interaction.toUpperCase(Locale.ROOT));
+      final String behavior = config.getYaml().getString(interaction.toUpperCase(Locale.ROOT));
       if(behavior == null) {
         continue;
       }

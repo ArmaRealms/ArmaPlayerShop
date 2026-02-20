@@ -7,10 +7,10 @@ import com.ghostchu.quickshop.util.logger.Log;
 import com.ghostchu.simplereloadlib.ReloadResult;
 import com.ghostchu.simplereloadlib.ReloadStatus;
 import com.ghostchu.simplereloadlib.Reloadable;
+import dev.dejvokep.boostedyaml.block.implementation.Section;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.ShulkerBox;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
@@ -67,7 +67,7 @@ public class QuickShopItemMatcherImpl implements ItemMatcher, Reloadable {
 
   private void init() {
 
-    itemMetaMatcher = new ItemMetaMatcher(plugin.getConfig().getConfigurationSection("matcher.item"), this);
+    itemMetaMatcher = new ItemMetaMatcher(plugin.getConfig().getSection("matcher.item"), this);
     workType = plugin.getConfig().getInt("matcher.work-type");
   }
 
@@ -159,10 +159,10 @@ public class QuickShopItemMatcherImpl implements ItemMatcher, Reloadable {
       return false; // One of them is null (Can't be both, see above)
     }
 
-    final String shopIdOrigin = plugin.getPlatform().getItemShopId(requireStack);
+    final String shopIdOrigin = plugin.platform().getItemShopId(requireStack);
     if(shopIdOrigin != null) {
-      Log.debug("ShopId compare -> Origin: " + shopIdOrigin + "  Given: " + plugin.getPlatform().getItemShopId(givenStack));
-      final String shopIdTester = plugin.getPlatform().getItemShopId(givenStack);
+      Log.debug("ShopId compare -> Origin: " + shopIdOrigin + "  Given: " + plugin.platform().getItemShopId(givenStack));
+      final String shopIdTester = plugin.platform().getItemShopId(givenStack);
       if(shopIdOrigin.equals(shopIdTester)) {
         return true;
       }
@@ -215,7 +215,7 @@ public class QuickShopItemMatcherImpl implements ItemMatcher, Reloadable {
 
     private final List<Matcher> matcherList = new ArrayList<>();
 
-    public ItemMetaMatcher(@NotNull final ConfigurationSection itemMatcherConfig, @NotNull final QuickShopItemMatcherImpl itemMatcher) {
+    public ItemMetaMatcher(@NotNull final Section itemMatcherConfig, @NotNull final QuickShopItemMatcherImpl itemMatcher) {
 
       final QuickShop plugin = QuickShop.getInstance();
       addIfEnable(itemMatcherConfig, "damage", (meta1, meta2)->{
@@ -258,9 +258,9 @@ public class QuickShopItemMatcherImpl implements ItemMatcher, Reloadable {
         }
         return true;
       });
-      addIfEnable(itemMatcherConfig, "displayname", ((meta1, meta2)->Objects.equals(plugin.getPlatform().getDisplayName(meta1), plugin.getPlatform().getDisplayName(meta2))));
+      addIfEnable(itemMatcherConfig, "displayname", ((meta1, meta2)->Objects.equals(plugin.platform().getDisplayName(meta1), plugin.platform().getDisplayName(meta2))));
       // We didn't touch the loresMatches because many plugin use this check item.
-      addIfEnable(itemMatcherConfig, "lores", ((meta1, meta2)->Objects.equals(plugin.getPlatform().getLore(meta1), plugin.getPlatform().getLore(meta2))));
+      addIfEnable(itemMatcherConfig, "lores", ((meta1, meta2)->Objects.equals(plugin.platform().getLore(meta1), plugin.platform().getLore(meta2))));
       addIfEnable(itemMatcherConfig, "enchs", ((meta1, meta2)->{
         if(meta1.hasEnchants() != meta2.hasEnchants()) {
           return false;
@@ -534,7 +534,7 @@ public class QuickShopItemMatcherImpl implements ItemMatcher, Reloadable {
       }));
     }
 
-    private void addIfEnable(final ConfigurationSection itemMatcherConfig, final String path, final Matcher matcher) {
+    private void addIfEnable(final Section itemMatcherConfig, final String path, final Matcher matcher) {
 
       if(itemMatcherConfig.getBoolean(path)) {
         matcherList.add(matcher);

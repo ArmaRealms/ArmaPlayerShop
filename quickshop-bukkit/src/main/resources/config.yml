@@ -1,7 +1,7 @@
 # QuickShop-Hikari Plugin Configuration
 
 #Do not touch this if you don't know what you're doing!
-config-version: 1033
+config-version: 1037
 
 #Set the default language code the plugin should use
 #Set it to default will use your system language.
@@ -18,6 +18,15 @@ game-language: default
 enabled-languages:
   - '*'
 
+#Configurations relating to the language processing system.
+lang-processor:
+  #Beta config option.
+  replace-filler-post-process: false
+  #should we use the placeholder post process system?
+  papi-post-process: true
+  #Should we disable item names always being italicized?
+  fix-item-always-italic: true
+
 #Setting the game language file download channel, like item name, effect translations etc.
 #We will get those files from mojang resources server:
 #0=Official
@@ -26,19 +35,97 @@ enabled-languages:
 #By default, QuickShop use Mojang official server to downloading resources.
 mojangapi-mirror: 0
 
+#Crowdin OTA host, you can change it to your own host if you want.
+crowdin-host: "https://crowdinota.hikari.r2.quickshop-powered.top"
+
+#Use Crowdin OTA to update language files?
+use-crowdin-ota: true
+
 #This enables the developer mode, do not touch this if you don't not know what it does!
 dev-mode: false
 
-#Tax amount (decimal)
-#Example: P1 buys $50 worth of stuff from P2.  Therefore, P1 loses $50, P2 gains $(1-0.05)*50, and the tax-account gains $(0.05)*50.
-tax: 0.05
+#configurations related to taxes.
+shop-tax:
 
-#The fake player where the tax money goes to.
-#Set this to "" to disable it (Taxing will still work but not deposit to any account)
-tax-account: tax
+  #The type of tax system to use.
+  #basic = basic tax system
+  #progressive = progressive tax system
+  type: basic
 
-# Disable taxes for unlimited shop
-tax-free-for-unlimited-shop: false
+  #The fake player where the tax money goes to.
+  #Set this to "" to disable it (Taxing will still work but not deposit to any account)
+  account: tax
+
+  #Whether to show taxes paid on shop transactions.
+  show: false
+
+  # Disable taxes for unlimited shop
+  disable-for-unlimited-shop: false
+
+  #who to apply the tax to, be it the shop or the player interacting with the shop.
+  #the person that the tax is applied to will have the permission check ran on them to see if they
+  #should be taxed be it the player or the shop owner or both.
+  #player = apply tax to the player who is interacting with the shop.
+  #shop = apply tax to the shop owner.
+  #both = apply tax to both the player and the shop owner.
+  apply-to: player
+
+  #the basic tax system configuration.
+  basic:
+
+    #Tax amount (decimal)
+    rate: 0.05
+
+  # =========================================
+  # Progressive Tax System
+  # =========================================
+  # This system applies tax rates based on the player's balance.
+  # The higher the balance, the higher the tax rate applied.
+  #
+  # Bracket format:
+  #   <upper-balance>: <tax-rate>
+  #
+  # Meaning:
+  #   - If the player's balance is LESS THAN OR EQUAL TO the upper-balance,
+  #     the corresponding tax rate will be used.
+  #   - Tax rates are decimals:
+  #       0.01 = 1%
+  #       0.05 = 5%
+  #       0.10 = 10%
+  #
+  # Special value:
+  #   - Use -1 as the upper-balance to represent "no upper limit"
+  #     (internally mapped to a very large value).
+  #
+  # Example:
+  #   10000: 0.01
+  #   - Players with ≤ 10,000 balance are taxed 1%
+  progressive:
+
+    # -----------------------------------------
+    # Tax Brackets
+    # -----------------------------------------
+    # Recommended to keep brackets ordered from lowest to highest
+    # for readability (ordering is enforced internally).
+    brackets:
+      #New / low-balance players
+      #≤ 10,000 → 1%
+      10000: 0.01
+      #Early progression
+      #≤ 50,000 → 2%
+      50000: 0.02
+      #Mid-game economy
+      #≤ 250,000 → 3%
+      250000: 0.03
+      #Wealthy players
+      #≤ 1,000,000 → 5%
+      1000000: 0.05
+      #Very wealthy players
+      #≤ 5,000,000 → 8%
+      5000000: 0.08
+      #Ultra-wealthy / no upper limit
+      #> 5,000,000 → 12%
+      -1: 0.12
 
 #Turn on this option will migrate shop owner to specified account when you set a shop to unlimited.
 #It won't affect exists shops, you will need switch to unlimited again to apply it.
@@ -48,15 +135,17 @@ unlimited-shop-owner-change: false
 #Only take effect when unlimited-shop-owner-change enabled
 unlimited-shop-owner-change-account: quickshop
 
-#Whether to show taxes paid when selling to a shop
-show-tax: false
-
 #Whether to respect item flags (e.g. hide the enchantment info when item have HIDE_ENCHANTS flag).
 respect-item-flag: true
 
 #Should we try to send cross-server message for the player?
 #It could cause the kicking on some network (which have multiple server that using different minecraft versions)
 bungee-cross-server-msg: false
+
+#Configurations related to server proxies.
+proxy:
+  #Force bungeecord mode on?
+  force-bungeecord: false
 
 #The currency used to create shops.
 #Set this to "" to use default currency.
@@ -128,6 +217,18 @@ database:
   prefix: "qs_"
   # Should QuickShop use SSL for database connections?  (Only required if mysql is true)
   usessl: false
+  # Should QuickShop disable username caching to the database?
+  disable-username-cache: false
+  bake-uuids: false
+  #The maximum number of threads for the loader service, don't touch unless you know what you're doing.
+  #Defaults to the recommended number based on your machine's processor.
+  loader-threads: -1
+  #Should we generate the full database information section for /qs paste?
+  generate-full-report: false
+  #Should we disable a timeout for max wait for the savetask when disabling the plugin? could cause hanging on shutdown.
+  unlimited-save-wait: false
+  #Should we skip checking if the QS database and tables are up-to-date? Disable at your own risk, no support will be provided.
+  skip-version-check: false
   # Properties for creating connections, you can add your own properties for datasource here. (Both local and remote will be used).
   properties:
     connectionTimeout: 60000
@@ -177,6 +278,10 @@ shop-blocks:
 
 shop:
 
+  #Should QS check if the shop is a valid shop block during retrieval? Could cause extra validation and chunk loading(could cause lag).
+  shoppable-check: true
+  #Should we update the shop's sign when the shop is loaded? Could cause lag.
+  update-sign-on-load: false
   #The components to use for the control panel if not set to the GUI-based control panel
   control-panel:
     - owner
@@ -190,6 +295,30 @@ shop:
     - display
     - history
     - remove
+
+  #The layout of signs for shops.
+  layout:
+
+    #The layout of BUYING shops.
+    BUYING:
+      line1: "header"
+      line2: "trading"
+      line3: "item"
+      line4: "price"
+
+    #The layout of FROZEN shops.
+    FROZEN:
+      line1: "header"
+      line2: "trading"
+      line3: "item"
+      line4: "price"
+
+    #The layout of SELLING shops.
+    SELLING:
+      line1: "header"
+      line2: "trading"
+      line3: "item"
+      line4: "price"
 
   #The cost to make a shop.
   cost: 10
@@ -307,6 +436,8 @@ shop:
     limit: 10
     #Should this ignore the distance?
     global: false
+    #The cooldown between searches in seconds.
+    cooldown: 20
     #Should non-loaded shops be incuded in the search?
     all: true
     #Should QS exclude out-of-stock/space shops?
@@ -339,8 +470,14 @@ shop:
   #Disabling it may cause database issues!
   auto-fetch-shop-messages: true
 
+  #The interval (in ticks) to flush pending QS messages to the player when they join the server.
+  join-flush-delay: 60
+
   #Ignore cancelled chat event, can sometimes improve compatibility with some chat plugins.
   ignore-cancel-chat-event: false
+
+  #Should we allow shop owners to add benefits to offline players?
+  allow-offline-benefit: false
 
   #Allow shops to be created in places where a sign cannot be placed?
   #(e.g There are blocks on all sides of the shop / The player doesn't have permission to put down a sign at that location)
@@ -373,7 +510,13 @@ shop:
   #NOTE: Only one effect is shown and is randomly chosen.
   use-effect-for-potion-item: false
 
+  #The list of worlds in which creating new shops is enabled.
+  #When this list is not empty, only worlds in this list will be allowed to create shops.
+  #This takes priority over blacklist-world.
+  whitelist-world: []
+
   #The list of worlds in which creating new shops is disabled.
+  #This will only be checked when whitelist-world is empty.
   blacklist-world:
     - disabled_world_name
 
@@ -391,6 +534,9 @@ shop:
 
   # Cancel the fake BlockBreakEvent before it passed to MONITOR level listeners.
   cancel-protection-fake-event-before-reach-monitor-listeners: true
+
+  #Should we ignore PlayerInteractEvents that have been cancelled already?
+  ignore-cancelled-interact-event: true
 
   #The list of worlds in which protection checking is disabled.
   protection-checking-blacklist:
@@ -478,12 +624,14 @@ shop:
     show-durability: true
 #List of items that can't be sold in shops.
 #Anyone with the quickshop.bypass.<itemID> permission can bypass it.
-#Add the reference the item lookup table by adding @ before the name.
+#Add the reference to the item lookup table by adding @ before the name.
 #For referenced item, the permission quickshop.bypass.reference will be used.
 #SUPPORT Item Expression!
 #https://quickshop-community.github.io/QuickShop-Hikari-Documents/docs/modules/item-expression
 blacklist:
   - Bedrock
+
+database-loading-whitelist-worlds: []
 
 database-loading-blacklist-worlds:
   - "the world that shop won't to be loaded"
@@ -618,7 +766,8 @@ debug:
 # Only turn it on when you updating from old versions.
 legacy-updater:
   shop-sign: false
-
+#Should we skip requiring confirmation when executing commands such as remove?
+skip-command-confirmation: false
 #Set the command alias for qs main command
 # - playershop
 # - pshop
@@ -639,6 +788,33 @@ config-damaged: false
 #Example:
 #  - "ecoenchants:enchantment.damage_artifact=Artifact Damage"
 custom-translation-key: [ ]
+
+#Configurations relating to looking up a player's uuid<->username combination
+uuid-lookup:
+
+  #Should QuickShop use the QS database to lookups uuids?
+  allow-db-uuid: true
+
+  #Should QuickShop use the QS database to lookups names?
+  allow-db-name: true
+
+  #Should we allow utilizing EssentialsX's player username->uuid cache when it's on the server?
+  allow-essentialsx-uuid: true
+
+  #Should we allow utilizing EssentialsX's player uuid->username cache when it's on the server?
+  allow-essentialsx-name: true
+
+  #Should we allow utilizing PlayerDB's player uuid<-username cache?
+  allow-playerdb-uuid: false
+
+  #Should we allow utilizing PlayerDB's player uuid->username cache?
+  allow-playerdb-name: false
+
+  #Should we allow utilizing offline player lookup for uuid<-username?
+  allow-bukkit-uuid: true
+
+  #Should we allow utilizing offline player lookup for uuid->username?
+  allow-bukkit-name: true
 
 
 #Privacy Controller allows you turn on/off some options that related to privacy. This is our move towards privacy transparency.
@@ -661,6 +837,3 @@ privacy:
 # Turn off this will stop recording transactions for metrics.
 transaction-metric:
   enable: true
-
-# Fill the donation key to show your donated QuickShop-Hikari in /quickshop about and QuickShop Paste.
-donation-key: ''
